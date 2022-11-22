@@ -1,0 +1,257 @@
+import os
+from os.path import join
+from re import L
+import pickle5 as pickle
+import torch
+import json
+from tqdm import tqdm
+
+from pycocotools.coco import COCO
+
+
+prompt_template = "a photo of a {}."
+
+IMAGENET_TEMPLATES = [
+    "a bad photo of a {}.",
+    "a photo of many {}.",
+    "a sculpture of a {}.",
+    "a photo of the hard to see {}.",
+    "a low resolution photo of the {}.",
+    "a rendering of a {}.",
+    "graffiti of a {}.",
+    "a bad photo of the {}.",
+    "a cropped photo of the {}.",
+    "a tattoo of a {}.",
+    "the embroidered {}.",
+    "a photo of a hard to see {}.",
+    "a bright photo of a {}.",
+    "a photo of a clean {}.",
+    "a photo of a dirty {}.",
+    "a dark photo of the {}.",
+    "a drawing of a {}.",
+    "a photo of my {}.",
+    "the plastic {}.",
+    "a photo of the cool {}.",
+    "a close-up photo of a {}.",
+    "a black and white photo of the {}.",
+    "a painting of the {}.",
+    "a painting of a {}.",
+    "a pixelated photo of the {}.",
+    "a sculpture of the {}.",
+    "a bright photo of the {}.",
+    "a cropped photo of a {}.",
+    "a plastic {}.",
+    "a photo of the dirty {}.",
+    "a jpeg corrupted photo of a {}.",
+    "a blurry photo of the {}.",
+    "a photo of the {}.",
+    "a good photo of the {}.",
+    "a rendering of the {}.",
+    "a {} in a video game.",
+    "a photo of one {}.",
+    "a doodle of a {}.",
+    "a close-up photo of the {}.",
+    "a photo of a {}.",
+    "the origami {}.",
+    "the {} in a video game.",
+    "a sketch of a {}.",
+    "a doodle of the {}.",
+    "a origami {}.",
+    "a low resolution photo of a {}.",
+    "the toy {}.",
+    "a rendition of the {}.",
+    "a photo of the clean {}.",
+    "a photo of a large {}.",
+    "a rendition of a {}.",
+    "a photo of a nice {}.",
+    "a photo of a weird {}.",
+    "a blurry photo of a {}.",
+    "a cartoon {}.",
+    "art of a {}.",
+    "a sketch of the {}.",
+    "a embroidered {}.",
+    "a pixelated photo of a {}.",
+    "itap of the {}.",
+    "a jpeg corrupted photo of the {}.",
+    "a good photo of a {}.",
+    "a plushie {}.",
+    "a photo of the nice {}.",
+    "a photo of the small {}.",
+    "a photo of the weird {}.",
+    "the cartoon {}.",
+    "art of the {}.",
+    "a drawing of the {}.",
+    "a photo of the large {}.",
+    "a black and white photo of a {}.",
+    "the plushie {}.",
+    "a dark photo of a {}.",
+    "itap of a {}.",
+    "graffiti of the {}.",
+    "a toy {}.",
+    "itap of my {}.",
+    "a photo of a cool {}.",
+    "a photo of a small {}.",
+    "a tattoo of the {}.",
+]
+
+
+####################################### VOC helpers #######################################
+voc_object_categories = ['aeroplane', 'bicycle', 'bird', 'boat',
+                        'bottle', 'bus', 'car', 'cat', 'chair',
+                        'cow', 'diningtable', 'dog', 'horse',
+                        'motorbike', 'person', 'pottedplant',
+                        'sheep', 'sofa', 'train', 'tvmonitor']
+voc_classname_synonyms = [
+    ['aeroplane', "air craft", "jet", "plane", "air plane"], 
+    ['bicycle', 'bike', 'cycle'], 
+    ['bird'], 
+    ['boat', 'raft', 'dinghy'],
+    ['bottle'], 
+    ['bus', 'autobus', 'coach', 'charabanc', 'double decker', 'jitney', 'motor bus', 'motor coach', 'omnibus'], 
+    ['car', 'taxi', 'auto', 'automobile', 'motor car'], 
+    ['cat', 'kitty'], 
+    ['chair', 'arm chair', 'bench'],
+    ['cow'], 
+    ['table', 'dining table', 'dinner table', 'din table'],  
+    ['dog', 'pup', 'puppy', 'doggy'], 
+    ['horse', 'colt', 'equus'],
+    ['motor bike', 'motor cycle'], 
+    ['person', 'human', 'people', 'man', 'woman', 'passenger'], 
+    ['potted plant', 'house plant', 'bonsai', 'pot plant'],
+    ['sheep'], 
+    ['sofa', 'couch'], 
+    ['train', 'rail way', 'railroad'], 
+    ['tvmonitor', 'monitor', 'tv', 'television', 'telly']
+]
+
+def read_im_name_list(path):
+    ret = []
+    with open(path, 'r') as f:
+        for line in f:
+            tmp = line.strip().split(' ')
+            ret.append(tmp[0])
+    return ret
+
+def read_image_label(file):
+    print('[dataset] read ' + file)
+    data_ = dict()
+    with open(file, 'r') as f:
+        for line in f:
+            tmp = line.strip().split(' ')
+            name = tmp[0]
+            label = int(tmp[-1])
+            data_[name] = label
+    return data_
+
+def read_object_labels(path, phase):
+    path_labels = os.path.join(path, 'ImageSets', 'Main')
+    labeled_data = dict()
+    num_classes = len(voc_object_categories)
+
+    for i in range(num_classes):
+        file = os.path.join(path_labels, voc_object_categories[i] + '_' + phase + '.txt')
+        data_ = read_image_label(file)
+
+        if i == 0:
+            for (name, label) in data_.items():
+                labels = torch.zeros(num_classes).long()
+                labels[i] = label
+                labeled_data[name] = labels
+        else:
+            for (name, label) in data_.items():
+                labeled_data[name][i] = label
+    return labeled_data
+
+
+
+####################################### COCO helpers #######################################
+coco_classname_synonyms =[
+    ['person', 'human', 'people', 'man', 'woman', 'passenger'],
+    ['bicycle', 'bike', 'cycle'],
+    ['car'],
+    ['motorcycle', 'motorbike'],
+    ['airplane', 'aeroplane', 'aircraft', 'jet', 'plane',],
+    ['bus'],
+    ['train', 'railway'],
+    ['truck'],
+    ['boat'],
+    ['traffic light'],
+    ['fire hydrant'],
+    ['stop sign'],
+    ['parking meter'],
+    ['bench'],
+    ['bird'],
+    ['cat', 'kitty'],
+    ['dog', 'pup', 'puppy', 'doggy'],
+    ['horse', 'colt'],
+    ['sheep'],
+    ['cow'],
+    ['elephant'],
+    ['bear'],
+    ['zebra'],
+    ['giraffe'],
+    ['backpack'],
+    ['umbrella'],
+    ['handbag'],
+    ['tie'],
+    ['suitcase'],
+    ['frisbee'],
+    ['skis'],
+    ['snowboard'],
+    ['sports ball'],
+    ['kite'],
+    ['baseball bat'],
+    ['baseball glove'],
+    ['skateboard'],
+    ['surfboard'],
+    ['tennis racket'],
+    ['bottle'],
+    ['wine glass'],
+    ['cup'],
+    ['fork'],
+    ['knife'],
+    ['spoon'],
+    ['bowl'],
+    ['banana'],
+    ['apple'],
+    ['sandwich'],
+    ['orange'],
+    ['broccoli'],
+    ['carrot'],
+    ['hot dog'],
+    ['pizza'],
+    ['donut'],
+    ['cake'],
+    ['chair', 'armchair'],
+    ['couch', 'sofa'],
+    ['potted plant', 'pottedplant', 'houseplants', 'bonsai'],
+    ['bed'],
+    ['dining table', 'diningtable', 'dinnertable', 'table'],
+    ['toilet'],
+    ['tv', 'tvmonitor', 'monitor', 'television'],
+    ['laptop'],
+    ['mouse'],
+    ['remote'],
+    ['keyboard'],
+    ['cell phone', 'phone', 'mobile phone'],
+    ['microwave'],
+    ['oven'],
+    ['toaster'],
+    ['sink'],
+    ['refrigerator'],
+    ['book'],
+    ['clock'],
+    ['vase'],
+    ['scissors'],
+    ['teddy bear'],
+    ['hair drier'],
+    ['toothbrush'],
+]
+
+coco_object_categories = [syn[0] for syn in coco_classname_synonyms]
+
+
+
+if __name__ == '__main__':
+    for t in IMAGENET_TEMPLATES:
+        print('\"' + t.format('[CLASS]') + '\"' )

@@ -1,0 +1,45 @@
+DATALOADER:
+  TRAIN_X:
+    BATCH_SIZE: 512
+  TEST:
+    BATCH_SIZE: 100
+  NUM_WORKERS: 8
+
+INPUT:
+  SIZE: (224, 224)
+  INTERPOLATION: "bicubic"
+  PIXEL_MEAN: [0.48145466, 0.4578275, 0.40821073]
+  PIXEL_STD: [0.26862954, 0.26130258, 0.27577711]
+  TRANSFORMS: ["random_resized_crop", "random_flip", "normalize"]
+  TRANSFORMS_TEST: ["resize", "center_crop", "normalize"]
+  random_resized_crop_scale: (0.6, 1.0)
+
+OPTIM:
+  NAME: "sgd"
+  LR: 0.0001
+  MAX_EPOCH: 20 # 40
+  LR_SCHEDULER: "cosine"
+  WARMUP_EPOCH: 1
+  WARMUP_TYPE: "constant"
+  WARMUP_CONS_LR: 1e-5
+
+TRAIN:
+  PRINT_FREQ: 5
+  IF_LEARN_SCALE: False
+  IF_LEARN_spatial_SCALE: False
+  spatial_SCALE_text: 50
+  spatial_SCALE_image: 40
+  LOSSFUNC: "double_ranking"
+
+  IF_ablation: False
+  Caption_num: 0
+
+TEST:
+  FINAL_MODEL: "best_val"
+  EVALUATOR :  "MLClassification"
+  EVALUATOR_ACT : "default_merge_aux"
+
+MODEL:
+  BACKBONE:
+    NAME: "RN50"
+   
