@@ -62,7 +62,7 @@ Then, you can run the code ~ -->
 ``` bash
 bash main.sh voc2007_distill rn50_fixscale end 16 16 False voc2007_caption_distill_abinf 0 6
 ```
-
+<!-- 
 ### UPL train 
 
 After `get info` step, we can train the prompt (default run 16 seeds, you can change it in `UPL/configs/UPLTrainer/rn50_ep50.yaml`):
@@ -75,7 +75,7 @@ If you want to use *UPL**, please change the `PSEUDO_LABEL_MODELS` in  `UPL/conf
 
 ```python
 CUDA_VISIBLE_DEVICES=0 bash upl_train.sh sscaltech101 rn50_ep50 end 16 16 False True multiple_models_random_init
-```
+``` -->
 
 <!-- 
 ## Testing
