@@ -1,0 +1,80 @@
+{'person','human','people','man','woman','passenger'}
+{'bicycle','bike','cycle'}
+{'car','taxi','auto','automobile','motor car'}
+{'motor bike','motor cycle'}
+{'aeroplane','air craft','jet','plane','air plane'}
+{'bus','autobus','coach','charabanc','double decker','jitney','motor bus','motor coach','omnibus'}
+{'train','rail way','railroad'}
+{'truck'}
+{'boat','raft','dinghy'}
+{'traffic light'}
+{'fire hydrant','fire tap','hydrant'}
+{'stop sign','halt sign'}
+{'parking meter'}
+{'bench'}
+{'bird'}
+{'cat','kitty'}
+{'dog','pup','puppy','doggy'}
+{'horse','colt','equus'}
+{'sheep'}
+{'cow'}
+{'elephant'}
+{'bear'}
+{'zebra'}
+{'giraffe','camelopard'}
+{'backpack','back pack','knapsack','packsack','rucksack','haversack'}
+{'umbrella'}
+{'handbag','hand bag','pocketbook','purse'}
+{'tie','necktie'}
+{'suitcase'}
+{'frisbee'}
+{'skis','ski'}
+{'snowboard'}
+{'sports ball','sport ball','ball','football','soccer','tennis','basketball','baseball'}
+{'kite'}
+{'baseball bat','baseball game bat'}
+{'baseball glove','baseball mitt','baseball game glove'}
+{'skateboard'}
+{'surfboard'}
+{'tennis racket'}
+{'bottle'}
+{'wine glass','vino glass'}
+{'cup'}
+{'fork'}
+{'knife'}
+{'spoon'}
+{'bowl'}
+{'banana'}
+{'apple'}
+{'sandwich'}
+{'orange'}
+{'broccoli'}
+{'carrot'}
+{'hot dog'}
+{'pizza'}
+{'donut','doughnut'}
+{'cake'}
+{'chair','arm chair'}
+{'couch','sofa'}
+{'potted plant','house plant','bonsai','pot plant'}
+{'bed'}
+{'dining table','dinner table','table','din table'}
+{'toilet','commode'}
+{'tv','tvmonitor','monitor','television','telly'}
+{'laptop'}
+{'mouse'}
+{'remote'}
+{'keyboard'}
+{'cell phone','phone','mobile phone'}
+{'microwave'}
+{'oven','roaster'}
+{'toaster'}
+{'sink'}
+{'refrigerator','icebox'}
+{'book'}
+{'clock'}
+{'vase'}
+{'scissors'}
+{'teddy bear','teddy'}
+{'hair drier','blowing machine','hair dryer','dryer','blow dryer','blown dry','blow dry'}
+{'toothbrush'}

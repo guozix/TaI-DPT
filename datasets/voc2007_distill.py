@@ -175,6 +175,6 @@ class VOC2007_distill(DatasetBase):
             item_ = Datum(impath=self.image_dir+'/{}.jpg'.format(name), label=test_data_imname2label[name], classname='')
             test.append(item_)
 
-        super().__init__(train_x=train, val=None, test=test, \
+        super().__init__(train_x=train, val=test, test=test, \
             num_classes=len(object_categories), classnames=object_categories, \
             lab2cname={idx: classname for idx, classname in enumerate(object_categories)})

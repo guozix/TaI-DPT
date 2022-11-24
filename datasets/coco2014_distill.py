@@ -16,207 +16,44 @@ from dassl.data.datasets import DATASET_REGISTRY, Datum, DatasetBase
 from dassl.utils import read_json, mkdir_if_missing
 from pycocotools.coco import COCO
 
-from .oxford_pets import OxfordPets
+from .data_helpers import *
 
-prompt_template = "a photo of {}."
+from nltk import word_tokenize, pos_tag
+from nltk.corpus import wordnet
+from nltk.stem import WordNetLemmatizer
 
+object_categories = coco_object_categories
+classname_synonyms = coco_classname_synonyms
 
-IMAGENET_TEMPLATES = [
-    "a bad photo of a {}.",
-    "a photo of many {}.",
-    "a sculpture of a {}.",
-    "a photo of the hard to see {}.",
-    "a low resolution photo of the {}.",
-    "a rendering of a {}.",
-    "graffiti of a {}.",
-    "a bad photo of the {}.",
-    "a cropped photo of the {}.",
-    "a tattoo of a {}.",
-    "the embroidered {}.",
-    "a photo of a hard to see {}.",
-    "a bright photo of a {}.",
-    "a photo of a clean {}.",
-    "a photo of a dirty {}.",
-    "a dark photo of the {}.",
-    "a drawing of a {}.",
-    "a photo of my {}.",
-    "the plastic {}.",
-    "a photo of the cool {}.",
-    "a close-up photo of a {}.",
-    "a black and white photo of the {}.",
-    "a painting of the {}.",
-    "a painting of a {}.",
-    "a pixelated photo of the {}.",
-    "a sculpture of the {}.",
-    "a bright photo of the {}.",
-    "a cropped photo of a {}.",
-    "a plastic {}.",
-    "a photo of the dirty {}.",
-    "a jpeg corrupted photo of a {}.",
-    "a blurry photo of the {}.",
-    "a photo of the {}.",
-    "a good photo of the {}.",
-    "a rendering of the {}.",
-    "a {} in a video game.",
-    "a photo of one {}.",
-    "a doodle of a {}.",
-    "a close-up photo of the {}.",
-    "a photo of a {}.",
-    "the origami {}.",
-    "the {} in a video game.",
-    "a sketch of a {}.",
-    "a doodle of the {}.",
-    "a origami {}.",
-    "a low resolution photo of a {}.",
-    "the toy {}.",
-    "a rendition of the {}.",
-    "a photo of the clean {}.",
-    "a photo of a large {}.",
-    "a rendition of a {}.",
-    "a photo of a nice {}.",
-    "a photo of a weird {}.",
-    "a blurry photo of a {}.",
-    "a cartoon {}.",
-    "art of a {}.",
-    "a sketch of the {}.",
-    "a embroidered {}.",
-    "a pixelated photo of a {}.",
-    "itap of the {}.",
-    "a jpeg corrupted photo of the {}.",
-    "a good photo of a {}.",
-    "a plushie {}.",
-    "a photo of the nice {}.",
-    "a photo of the small {}.",
-    "a photo of the weird {}.",
-    "the cartoon {}.",
-    "art of the {}.",
-    "a drawing of the {}.",
-    "a photo of the large {}.",
-    "a black and white photo of a {}.",
-    "the plushie {}.",
-    "a dark photo of a {}.",
-    "itap of a {}.",
-    "graffiti of the {}.",
-    "a toy {}.",
-    "itap of my {}.",
-    "a photo of a cool {}.",
-    "a photo of a small {}.",
-    "a tattoo of the {}.",
-]
-
-classname_synonyms =[
-    ['person', 'human', 'people', 'man', 'woman', 'passenger'],
-    ['bicycle', 'bike', 'cycle'],
-    ['car', 'taxi'],
-    ['motorcycle', 'motorbike'],
-    ['airplane', 'aeroplane', 'aircraft', 'jet', 'plane',],
-    ['bus'],
-    ['train', 'railway'],
-    ['truck'],
-    ['boat'],
-    ['traffic light'],
-    ['fire hydrant'],
-    ['stop sign'],
-    ['parking meter'],
-    ['bench'],
-    ['bird'],
-    ['cat', 'kitty'],
-    ['dog', 'pup', 'puppy', 'doggy'],
-    ['horse', 'colt'],
-    ['sheep'],
-    ['cow'],
-    ['elephant'],
-    ['bear'],
-    ['zebra'],
-    ['giraffe'],
-    ['backpack'],
-    ['umbrella'],
-    ['handbag'],
-    ['tie'],
-    ['suitcase'],
-    ['frisbee'],
-    ['skis'],
-    ['snowboard'],
-    ['sports ball'],
-    ['kite'],
-    ['baseball bat'],
-    ['baseball glove'],
-    ['skateboard'],
-    ['surfboard'],
-    ['tennis racket'],
-    ['bottle'],
-    ['wine glass'],
-    ['cup'],
-    ['fork'],
-    ['knife'],
-    ['spoon'],
-    ['bowl'],
-    ['banana'],
-    ['apple'],
-    ['sandwich'],
-    ['orange'],
-    ['broccoli'],
-    ['carrot'],
-    ['hot dog'],
-    ['pizza'],
-    ['donut'],
-    ['cake'],
-    ['chair', 'armchair', 'bench'],
-    ['couch', 'sofa'],
-    ['potted plant', 'pottedplant', 'houseplants', 'bonsai'],
-    ['bed'],
-    ['dining table', 'diningtable', 'dinnertable', 'table'],
-    ['toilet'],
-    ['tv', 'tvmonitor', 'monitor', 'television'],
-    ['laptop'],
-    ['mouse'],
-    ['remote'],
-    ['keyboard'],
-    ['cell phone', 'phone', 'mobile phone'],
-    ['microwave'],
-    ['oven'],
-    ['toaster'],
-    ['sink'],
-    ['refrigerator'],
-    ['book'],
-    ['clock'],
-    ['vase'],
-    ['scissors'],
-    ['teddy bear'],
-    ['hair drier'],
-    ['toothbrush'],
-]
-
-
-clsname2idx = {}
+clsname2idx_ = {}
+nameset_compound = set()
+nameset = set()
 for idx, synset in enumerate(classname_synonyms):
     for n in synset:
-        clsname2idx[n] = idx
-        # clsname2idx[n+'s'] = idx
-        # clsname2idx[n+'es'] = idx
+        clsname2idx_[n] = idx
 
         if ' ' in n:
+            nameset_compound.add(n)
             m = n.replace(' ', '')
-            clsname2idx[m] = idx
-            # clsname2idx[m+'s'] = idx
-            # clsname2idx[m+'es'] = idx
-
-object_categories = [syn[0] for syn in classname_synonyms]
-
+            clsname2idx_[m] = idx
+            nameset.add(m)
+        else:
+            nameset.add(n)
 
 @DATASET_REGISTRY.register()
 class COCO2014_distill(DatasetBase):
     def __init__(self, cfg):
         self.dataset_dir = 'COCO'
+        cls_num = len(object_categories)
     
         root = os.path.abspath(os.path.expanduser(cfg.DATASET.ROOT))
         self.dataset_dir = os.path.join(root, self.dataset_dir)
 
-        coco_instance_json_file = os.path.join(self.dataset_dir, "annotations2014/instances_val2014.json")
+        coco_instance_json_file = os.path.join(self.dataset_dir, "annotations/instances_val2014.json")
 
         coco = COCO(coco_instance_json_file)
         self.valset_ids = coco.getImgIds()
-        cls_num = 80
+        
 
         instance_info = {}
         with open(coco_instance_json_file, 'r') as f:
@@ -246,30 +83,17 @@ class COCO2014_distill(DatasetBase):
 
 
         # ===================  training captions
-        caption_feat_root = '/home/qiangwenjie/gzx/CoOp-main'  # '/home/weiyuxiang/gzx/CoOp-main'
+        caption_feat_root = os.getcwd()
         with open(join(caption_feat_root, 'coco_caption_text_embed_sampled_idx.pkl'), 'rb') as f:
             sample_capid = pickle.load(f)
 
-        # ##### if exists, just read label
-        if os.path.exists(join(caption_feat_root, 'coco2014_cls_word_based_caption_labels_v3.pkl')):
-
-            with open(join(caption_feat_root, 'coco2014_cls_word_based_caption_labels_v4.pkl'), 'rb') as f:
+        # if exists, just read label
+        if os.path.exists(join(caption_feat_root, 'coco2014_cls_word_based_caption_labels.pkl')):
+            with open(join(caption_feat_root, 'coco2014_cls_word_based_caption_labels.pkl'), 'rb') as f:
                 word_based_caption = pickle.load(f)
-            with open(join(caption_feat_root, 'coco2014_cls_capid_filterword_empty_v4.pkl'), 'rb') as f:
-                capid_empty_filter = pickle.load(f)
-            with open(join(caption_feat_root, 'coco2014_cls_feature_based_caption_selected_1w_percls_v1.pkl'), 'rb') as f:
-                feature_based_caption = pickle.load(f)
         
         else:
-            ## not exists, make now
-            with open(join(caption_feat_root, 'coco_caption_text_embed_sampled.pkl'),'rb') as f:
-                sample_text_embed = pickle.load(f)
-            print('caption embedding shape:', sample_text_embed.shape)  # torch.Size([118287, 1024])
-
-            with open(join(caption_feat_root, "coco_cls_prompts_embed.pkl"), "rb") as f:
-                coco_default_cls_embed = pickle.load(f)
-
-            coco_root = self.dataset_dir # os.path.join(root, "COCO")  # "/home/weiyuxiang/gzx/VOS/datas/COCO"
+            coco_root = self.dataset_dir
             coco_caption_json_file = os.path.join(coco_root, "annotations/captions_train2017.json")
             caption_info = {}
             with open(coco_caption_json_file, 'r') as f:
@@ -280,37 +104,52 @@ class COCO2014_distill(DatasetBase):
                 anno_id2path[i["id"]] = i
             # print(i.keys())
             print("captions_train2017 nums:", len(anno_id2path))
-
-            sample_text_embed = sample_text_embed.cuda()
-            coco_default_cls_embed = coco_default_cls_embed.cuda()
-            logits_all = ( coco_default_cls_embed.cuda() @ sample_text_embed.t() ).float().cpu() 
-            del coco_default_cls_embed
-            del sample_text_embed
-
-            print("corr matrix shape:", logits_all.shape)  # torch.Size([20, 118287])
-            print('Ranking...')
-            sorted_idxs = torch.argsort(logits_all, dim=1, descending=True)
-
-            base_caption_nums = 10000
-            feature_based_caption = {}  # clsidx 2 capid
-            for i in range(cls_num):
-                for idx in sorted_idxs[i, :base_caption_nums]:
-                    feature_based_caption.setdefault(i, list())
-                    feature_based_caption[i].append(sample_capid[idx])
-            with open('coco2014_cls_feature_based_caption_selected_5kpercls.pkl', 'wb') as f:
-                pickle.dump(feature_based_caption, f)
-                # 80 keys denote class id, 10000 len list corresponded, denote similar caption id.
+            
+            def get_wordnet_pos(tag):
+                if tag.startswith('J'):
+                    return wordnet.ADJ
+                elif tag.startswith('V'):
+                    return wordnet.VERB
+                elif tag.startswith('N'):
+                    return wordnet.NOUN
+                elif tag.startswith('R'):
+                    return wordnet.ADV
+                else:
+                    return None
 
             word_based_caption = {} # capid 2 cls labels
             capid_empty_filter = set()
+            wnl = WordNetLemmatizer()
             for i, capid in enumerate(tqdm(sample_capid)):
                 cap = anno_id2path[capid]['caption'].lower()
-                L = [0] * 80
+                noum_list = word_tokenize(cap)
+                tagged_sent = pos_tag(noum_list) 
+                # print(tagged_sent)
+                # break
+
+                lemmas_sent = []
+                for tag in tagged_sent:
+                    wordnet_pos = get_wordnet_pos(tag[1]) or wordnet.NOUN
+                    lemmas_sent.append(wnl.lemmatize(tag[0], pos=wordnet_pos))
+                # print(lemmas_sent)
+
+                cap = ' ' + ' '.join(lemmas_sent) + ' '
+
+                L = [0] * cls_num
                 flag = 0
-                for name in clsname2idx:
-                    if name in cap:
-                        L[clsname2idx[name]] = 1
+                for name in nameset_compound:
+                    name_ = ' ' + name + ' '
+                    if (name_ in cap):
+                        L[clsname2idx_[name]] = 1
                         flag = 1
+                        cap = cap.replace(name_, ' ')
+                for name in nameset:
+                    name_ = ' ' + name + ' '
+                    if (name_ in cap):
+                        L[clsname2idx_[name]] = 1
+                        flag = 1
+                        cap = cap.replace(name_, ' ')
+
                 if flag:
                     word_based_caption[capid] = L
                 else:
@@ -319,17 +158,16 @@ class COCO2014_distill(DatasetBase):
             print('===== Filtered by words all captions, num of captions contains object {}, num of caption empty {} ====='.format(len(word_based_caption), len(capid_empty_filter)))
             with open('coco2014_cls_word_based_caption_labels.pkl', 'wb') as f:
                 pickle.dump(word_based_caption, f)
-                # len=118287, caption id to label list
             with open('coco2014_cls_capid_filterword_empty.pkl', 'wb') as f:
                 pickle.dump(capid_empty_filter, f)
 
         if os.path.exists(join(caption_feat_root, 'all_caption_tokenized.pkl')):
             with open(join(caption_feat_root, 'all_caption_tokenized.pkl'), 'rb') as f:
                 prompts = pickle.load(f)
-        # else:
-        #     prompts = torch.cat([clip.tokenize(anno_id2path[p]['caption']) for p in sample_capid])
-        #     with open('all_caption_tokenized.pkl', 'wb') as f:
-        #         pickle.dump(prompts, f)
+        else:
+            prompts = torch.cat([clip.tokenize(anno_id2path[p]['caption']) for p in sample_capid])
+            with open('all_caption_tokenized.pkl', 'wb') as f:
+                pickle.dump(prompts, f)
 
         sample_capid_inverse_idx = {}
         for i, j in enumerate(sample_capid):

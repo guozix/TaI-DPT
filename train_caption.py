@@ -12,12 +12,12 @@ from dassl.config import get_cfg_default
 from dassl.engine import build_trainer
 
 import datasets.voc2007_distill
-# import datasets.coco2014_distill
-# import datasets.nuswide_distill
+import datasets.coco2014_distill
+import datasets.nuswide_distill
 
 import trainers.zsclip
-# import trainers.Caption_distill
 import trainers.Caption_distill_double
+# import trainers/
 
 
 def print_args(args, cfg):

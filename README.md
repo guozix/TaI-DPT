@@ -6,6 +6,10 @@
 
 This repo is the official implementation of **Texts as Images in Prompt Tuning for Multi-Label Recognition**.
 
+[[arxiv](https://arxiv.org/abs/2211.12739)]
+
+TaI-DPT explores the feasibility of prompting with text data for multi-label image recognition. Notable improvements are observed compared to zero-shot methods on multiple common multi-label benchmarks. For more details please see the [paper](https://arxiv.org/abs/2211.12739).
+
 Contact us with zixian_guo@foxmail.com
 
 
@@ -17,74 +21,81 @@ Fig.1 Overview of Text-as-Image (TaI) prompting.
 
 ## Install
 
-The code is built on the [CoOp](https://github.com/KaiyangZhou/CoOp) and [Dassl](https://github.com/KaiyangZhou/Dassl.pytorch).
+The code is based largely on the implementation of [CoOp](https://github.com/KaiyangZhou/CoOp) and [Dassl](https://github.com/KaiyangZhou/Dassl.pytorch).
 
-<!-- , so you need to install the dassl environment first. You can follow the [instructions](https://github.com/KaiyangZhou/Dassl.pytorch#installation) to install *dassl* as well as *PyTorch*. After that, run `pip install -r requirements.txt` under `UPL/` to install a few more packages required by [CLIP](https://github.com/openai/CLIP). -->
 
-<!-- **We also prepare all installation commands for you**: -->
+Please follow the steps below to build your environment.
 
 ```bash
+# Create a conda environment (Omit if you already have a suitable environment)
+conda create -n dassl python=3.7
+conda activate dassl
+conda install pytorch==1.8.1 torchvision==0.9.1 cudatoolkit=10.1 -c pytorch  # torch (version >= 1.7.1)
+
 # Clone this repo
 git clone https://github.com/guozix/TaI-DPT.git
 cd TaI-DPT
 
 # install Dassl
 cd Dassl.pytorch-master/
-
-# Create a conda environment
-conda create -n dassl python=3.7
-
-# Activate the environment
-conda activate dassl
-
 # Install dependencies
 pip install -r requirements.txt
-
-# Install torch (version >= 1.7.1) and torchvision
-conda install pytorch==1.8.1 torchvision==0.9.1 cudatoolkit=10.1 -c pytorch
-
 # Install this library (no need to re-build if the source code is modified)
 python setup.py develop
 
 cd ..
+# Install CLIP dependencies
+pip install -r requirements.txt
 
 # Finished
 ```
 
-<!-- ## Datasets
-
-After that, you can follow the [CoOp Datasets Instructions](https://github.com/KaiyangZhou/CoOp/blob/main/DATASETS.md) to prepare the datasets. 
-
-Then, you can run the code ~ -->
+## Datasets
+We use captions from MS-COCO and localized narratives from OpenImages, and we evaluate our method on VOC2007, MS-COCO and NUS-WIDE.
+The directory structure is organized as follows.
+```
+DATA
+├── OpenImages
+│   ├── captions
+│   │   └── open_images_train_v6_captions.jsonl
+├── VOCdevkit
+│   ├── VOC2007
+|   │   ├── Annotations
+|   │   ├── caption_data
+|   │   ├── ImageSets
+|   │   │   ├── Layout
+|   │   │   ├── Main
+|   │   │   └── Segmentation
+|   │   ├── JPEGImages
+|   │   ├── SegmentationClass
+|   │   └── SegmentationObject
+├── COCO
+│   ├── annotations
+│   ├── train2014
+│   └── val2014
+└── NUSWIDE
+    ├── ImageList
+    │   ├── Imagelist.txt
+    │   ├── TestImagelist.txt
+    │   └── TrainImagelist.txt
+    ├── Flickr
+    │   ├── actor
+    │   ├── administrative_assistant
+    │   ├── adobehouses
+    │   ├── adult
+    │   ...
+    ├── TrainTestLabels
+    └── Concepts81.txt
+```
+<!-- We provide images of NUS-WIDE used in our experiments:
+https://pan.baidu.com/s/1Bj-7fdrZAvUJPqAKrUkbbQ  (verification code: s6oj) -->
 
 ## Training
 
 ``` bash
 bash main.sh voc2007_distill rn50_fixscale end 16 16 False voc2007_caption_distill_abinf 0 6
 ```
-<!-- 
-### UPL train 
 
-After `get info` step, we can train the prompt (default run 16 seeds, you can change it in `UPL/configs/UPLTrainer/rn50_ep50.yaml`):
-
-```python
-CUDA_VISIBLE_DEVICES=0 bash upl_train.sh sscaltech101 rn50_ep50 end 16 16 False True rn50_random_init
-```
-
-If you want to use *UPL**, please change the `PSEUDO_LABEL_MODELS` in  `UPL/configs/UPLTrainer/rn50_ep50.yaml`. Please ensure that you have obatined info from all released models. Then, you can run
-
-```python
-CUDA_VISIBLE_DEVICES=0 bash upl_train.sh sscaltech101 rn50_ep50 end 16 16 False True multiple_models_random_init
-``` -->
-
-<!-- 
-## Testing
-
-### Test with existing files after UPL training
-
-```python
-bash upl_test_existing_logits.sh sscaltech101 rn50_ep50 end 16 16 False True
-``` -->
 
 ## Thanks
 
