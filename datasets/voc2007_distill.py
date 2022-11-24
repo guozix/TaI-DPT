@@ -130,6 +130,7 @@ class VOC2007_distill(DatasetBase):
             with open(join(caption_feat_root, 'all_caption_tokenized.pkl'), 'rb') as f:
                 prompts = pickle.load(f)
         else:
+            print('tokenizing {} captions ...'.format(len(sample_capid)))
             prompts = torch.cat([clip.tokenize(anno_id2path[p]['caption']) for p in sample_capid])
             with open('all_caption_tokenized.pkl', 'wb') as f:
                 pickle.dump(prompts, f)

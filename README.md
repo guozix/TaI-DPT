@@ -93,7 +93,7 @@ https://pan.baidu.com/s/1Bj-7fdrZAvUJPqAKrUkbbQ  (verification code: s6oj) -->
 ## Training
 
 ``` bash
-bash main.sh voc2007_distill rn50_fixscale end 16 16 False voc2007_caption_distill_abinf 0 6
+bash main.sh voc2007_distill rn50_fixscale end 16 16 False voc2007_caption 0 6
 ```
 
 

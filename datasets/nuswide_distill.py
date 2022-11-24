@@ -93,7 +93,7 @@ class nuswide_distill_limit(DatasetBase):
 
                     cap = item['caption'].lower()
                     
-                    noum_list = word_tokenize(cap)[:77]  # clip 只处理前77个
+                    noum_list = word_tokenize(cap)[:77]  # clip only encoder sentence shorter than 77
                     tagged_sent = pos_tag(noum_list) 
                     # print(tagged_sent)
                     # break
@@ -101,14 +101,13 @@ class nuswide_distill_limit(DatasetBase):
                     lemmas_sent = []
                     for tag in tagged_sent:
                         wordnet_pos = get_wordnet_pos(tag[1]) or wordnet.NOUN
-                        lemmas_sent.append(wnl.lemmatize(tag[0], pos=wordnet_pos))  # 词性还原
+                        lemmas_sent.append(wnl.lemmatize(tag[0], pos=wordnet_pos)) 
                     # print(lemmas_sent)
 
                     cap = ' ' + ' '.join(lemmas_sent) + ' '
 
                     L = [0] * 81
                     flag = 0
-
                     for name in nameset_compound:
                         name_ = ' ' + name + ' '
                         if (name_ in cap):
@@ -132,8 +131,21 @@ class nuswide_distill_limit(DatasetBase):
                 with open(f'nuswide_cls_capid_filterword_empty.pkl', 'wb') as f:
                     pickle.dump(capid_empty_filter, f)
 
-        with open(join(caption_feat_root, 'all_caption_tokenized_open_images.pkl'), 'rb') as f:
-            prompts = pickle.load(f)
+        if os.path.exists(join(caption_feat_root, 'all_caption_tokenized_open_images.pkl')):
+            with open(join(caption_feat_root, 'all_caption_tokenized_open_images.pkl'), 'rb') as f:
+                prompts = pickle.load(f)
+        else:
+            tmp = []
+            with open(join(caption_feat_root, 'OpenImages/captions/open_images_train_v6_captions.jsonl'), 'r+', encoding='utf-8') as f:
+                for item in tqdm(jsonlines.Reader(f), desc='tokenizing openimage captions ...'):
+                    tmp.append(clip.tokenize(item['caption'], truncate=True))
+                    # cnt += 1
+                    # if cnt % 100 == 0:
+                    #     print(cnt)
+
+            prompts = torch.cat(tmp)
+            with open('all_caption_tokenized_open_images.pkl', 'wb') as f:
+                pickle.dump(prompts, f)
         print(prompts.shape)
         
         # =============================================================
@@ -173,7 +185,7 @@ class nuswide_distill_limit(DatasetBase):
 
         
         # default template
-        default_prompt_num = 10 # 1  100
+        default_prompt_num = 10
         for i in range(cls_num):
             label = [0] * cls_num
             label[i] = 1
