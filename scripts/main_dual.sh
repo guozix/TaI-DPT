@@ -3,37 +3,26 @@
 cd ..
 
 # custom config
-# DATA=/home/weiyuxiang/gzx/VOS/datas
 DATA=/home/qiangwenjie/datasets
-# TRAINER=Caption
 TRAINER=Caption_dual
-# TRAINER=Caption_dense
-# TRAINER=Caption_dual_dense
 
 DATASET=$1
 CFG=$2  # config file
 CTP=$3  # class token position (end or middle)
 NCTX=$4  # number of context tokens
-SHOTS=$5  # number of shots (1, 2, 4, 8, 16)
-CSC=$6  # class-specific context (False or True)
-run_ID=$7
-trainset_sample=$8
+CSC=$5  # class-specific context (False or True)
+run_ID=$6
+partial_prob=$7
 
-export CUDA_VISIBLE_DEVICES=$9
-partial_prob=${10}
+export CUDA_VISIBLE_DEVICES=$8
 
-# echo ${run_ID}
-# echo ${trainset_sample}
-# echo ${partial_prob}
-
-for SEED in 1 2 3 # 0 1 2 3 4 5 6 7 8 9
+for SEED in 1
 do
     DIR=output/${run_ID}/${TRAINER}/${CFG}/nctx${NCTX}_csc${CSC}_ctp${CTP}/seed${SEED}
     if [ -d "$DIR" ]; then
         echo "Results are available in ${DIR}. Skip this job"
     else
         echo "Run this job andsave the output to ${DIR}"
-        # python train.py \  CUDA_VISIBLE_DEVICES=1
         python train_caption.py \
         --root ${DATA} \
         --seed ${SEED} \
@@ -44,9 +33,16 @@ do
         TRAINER.Caption.N_CTX ${NCTX} \
         TRAINER.Caption.CSC ${CSC} \
         TRAINER.Caption.CLASS_TOKEN_POSITION ${CTP} \
-        DATASET.NUM_SHOTS ${SHOTS} \
-        DATASET.SAMPLE ${trainset_sample} \
         DATASET.partial_prob ${partial_prob}
-        # INPUT.random_resized_crop_scale "(0.8, 1.0)"
     fi
 done
+
+
+# VOC
+# bash main_dual.sh voc2007_partial rn101 end 16 True voc2007_partial_dualcoop_448_CSC_p0_5 0.5 0
+
+# COCO
+# bash main_dual.sh coco2014_partial rn101 end 16 True coco2014_partial_dualcoop_448_CSC_p0_5 0.5 1
+
+# NUSWIDE
+# bash main_dual.sh nuswide_partial rn101_nus end 16 True nuswide_partial_dualcoop_448_CSC_p0_5 0.5 2

@@ -365,12 +365,6 @@ class DenseCLIP(nn.Module):
 
 @TRAINER_REGISTRY.register()
 class Caption_distill_double(TrainerX):
-    """Context Optimization (CoOp).
-
-    Learning to Prompt for Vision-Language Models
-    https://arxiv.org/abs/2109.01134
-    """
-
     def model_inference(self, input):
         return self.model(input, if_test=True)
         # return self.model(None, input)

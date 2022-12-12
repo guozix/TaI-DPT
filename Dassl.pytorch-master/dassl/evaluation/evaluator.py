@@ -5,6 +5,7 @@ import os.path as osp
 from collections import OrderedDict, defaultdict
 import torch
 from sklearn.metrics import f1_score, confusion_matrix
+import pickle5 as pickle
 
 from .build import EVALUATOR_REGISTRY
 
@@ -210,6 +211,8 @@ class MLClassification(EvaluatorBase):
         preds = torch.cat(self._y_pred, dim=0)
         if len(self._y_pred_aux) > 0:
             preds_aux = torch.cat(self._y_pred_aux, dim=0)
+        else:
+            preds_aux = None
         if self.activate_func == 'default_merge_aux':
             mAP_score = mAP(targets, preds.cpu().numpy())
             print("mAP score default:", mAP_score)
@@ -223,6 +226,10 @@ class MLClassification(EvaluatorBase):
                 mAP_score_ = mAP(targets, preds_merge)
                 print("mAP score merged : preds + preds_aux:", mAP_score_)
                 mAP_score = mAP_score_
+        if self.activate_func == 'only_local':
+            mAP_score = mAP(targets, preds_aux.cpu().numpy())
+            # print("mAP score:", mAP_score)
+
         else:
             preds_ = torch.sigmoid(preds).cpu().numpy()
             mAP_score_sigmoid = mAP(targets, preds_)
@@ -232,6 +239,10 @@ class MLClassification(EvaluatorBase):
 
         results = OrderedDict()
         results["mAP"] = mAP_score
+        
+        if self.cfg.TEST.SAVE_PREDS:
+            with open(self.cfg.TEST.SAVE_PREDS, 'wb') as f:
+                pickle.dump((targets, preds, preds_aux), f)
         return results
 
 

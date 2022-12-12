@@ -2,7 +2,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 import os
-os.environ["CUDA_VISIBLE_DEVICES"]="0"
+# os.environ["CUDA_VISIBLE_DEVICES"]="0"
 
 import argparse
 import torch
@@ -14,9 +14,13 @@ from dassl.engine import build_trainer
 import datasets.voc2007_distill
 import datasets.coco2014_distill
 import datasets.nuswide_distill
+import datasets.voc2007_partial
+import datasets.coco2014_partial
+import datasets.nuswide_trainset_gt
 
 import trainers.zsclip
 import trainers.Caption_distill_double
+import trainers.Caption_dual
 
 
 def print_args(args, cfg):
@@ -85,8 +89,8 @@ def extend_cfg(cfg):
     cfg.TRAINER.Caption.PREC = "fp32"  # fp16, fp32, amp
     cfg.TRAINER.Caption.CLASS_TOKEN_POSITION = "end"  # 'middle' or 'end' or 'front'
     cfg.TRAINER.Caption.GL_merge_rate = 0.5
-    cfg.TRAINER.Caption.fewshot_TaI_merge_rate = 0.6
-    cfg.TRAINER.Caption.partial_TaI_merge_rate = 0.9
+    # cfg.TRAINER.Caption.fewshot_TaI_merge_rate = 0.6
+    # cfg.TRAINER.Caption.partial_TaI_merge_rate = 0.9
 
     cfg.DATASET.SUBSAMPLE_CLASSES = "all"  # all, base or new
     cfg.DATASET.SAMPLE = 0 # Sample some of all datas, 0 for no sampling i.e. using all
@@ -101,6 +105,7 @@ def extend_cfg(cfg):
     cfg.TRAIN.Caption_num = 0
     
     cfg.TEST.EVALUATOR_ACT = "softmax"  # or "sigmoid"
+    cfg.TEST.SAVE_PREDS = ""
     
     # several param for spacific transform setting
     cfg.INPUT.random_resized_crop_scale = (0.8, 1.0)

@@ -273,12 +273,6 @@ class DenseCLIP(nn.Module):
         image_feat = self.encode_image(image)
         b, c, h, w = image_feat.shape
         x = image_feat.reshape(b, c, h * w).permute(2, 0, 1)
-        # g_x = x.mean(0, keepdim=True)
-
-        # x = x + self.positional_embedding[:, None, :].to(x.dtype)  # (HW)xBxC 
-        
-        # pos_embedding = self.model.visual.attnpool.interpolate_pos_encoding(x, h, w)[1:, :]
-        # x = x + pos_embedding[:, None, :].to(x.dtype)  # (HW+1)NC
 
         x = F.linear(x, self.v_linear_weight, self.v_linear_bias)
         x = F.linear(x, self.c_linear_weight, self.c_linear_bias)
@@ -297,7 +291,7 @@ class DenseCLIP(nn.Module):
         text_features = text_features / text_features.norm(dim=-1, keepdim=True)
         text_features_neg = text_features_neg / text_features_neg.norm(dim=-1, keepdim=True)
 
-        logit_scale = temperature.exp()  # self.logit_scale.exp()
+        logit_scale = temperature.exp() 
         logits = image_features @ text_features.t()    #  HW * B * C,  cls * C,  HW * B * cls
         logits_neg = logit_scale * image_features @ text_features_neg.t()    #  HW * B * C,  cls * C,  HW * B * cls
         
@@ -312,66 +306,9 @@ class DenseCLIP(nn.Module):
         logits_g = logits_g - logits_neg_g
         return logits_g, logits_, image_features, text_features
 
-class CustomCLIP(nn.Module):
-    def __init__(self, cfg, classnames, clip_model):
-        super().__init__()
-        self.prompt_learner = PromptLearner(cfg, classnames, clip_model)
-        self.tokenized_prompts = self.prompt_learner.tokenized_prompts
-        self.image_encoder = clip_model.visual
-        self.text_encoder = TextEncoder(clip_model)
-        self.logit_scale = clip_model.logit_scale
-        self.dtype = clip_model.dtype
-
-        self.min_ = 1
-        self.max_ = 0
-
-    def forward(self, image):
-        image_features = self.image_encoder(image.type(self.dtype))
-
-        prompts, prompts_neg = self.prompt_learner()
-        tokenized_prompts = self.tokenized_prompts
-        text_features = self.text_encoder(prompts, tokenized_prompts)
-        text_features_neg = self.text_encoder(prompts_neg, tokenized_prompts)
-        
-        if True:
-            image_features = image_features / image_features.norm(dim=-1, keepdim=True)
-            text_features = text_features / text_features.norm(dim=-1, keepdim=True)
-            text_features_neg = text_features_neg / text_features_neg.norm(dim=-1, keepdim=True)
-
-        logit_scale = self.logit_scale.exp()
-        logits = image_features @ text_features.t()    #  HW * B * C,  cls * C,  HW * B * cls
-        logits_neg = image_features @ text_features_neg.t()    #  HW * B * C,  cls * C,  HW * B * cls
-
-        # prob_ = torch.nn.functional.softmax(logits, dim=0)
-        # logits = torch.sum(logits * prob_, dim=0)
-        # logits_neg = torch.sum(logits_neg * prob_, dim=0)
-
-        logits = logits - logits_neg
-
-        ## check score range
-        self.min_ = min(self.min_, logits.min().item())
-        self.max_ = max(self.max_, logits.max().item())
-        print(self.min_, self.max_)
-
-        logits = logit_scale * logits
-
-        # mean
-        # max_ = torch.max(logits, dim=1, keepdim=True)[0]
-        # min_ = torch.min(logits, dim=1, keepdim=True)[0]
-        # mean_ = (max_ + min_) / 2
-        # logits = logits - mean_
-
-
-        return logits, image_features, text_features
-
 
 @TRAINER_REGISTRY.register()
 class Caption_dual(TrainerX):
-    """Context Optimization (CoOp).
-
-    Learning to Prompt for Vision-Language Models
-    https://arxiv.org/abs/2109.01134
-    """
     @torch.no_grad()
     def test(self, split=None):
         """A generic testing pipeline."""
@@ -389,25 +326,10 @@ class Caption_dual(TrainerX):
             data_loader = self.test_loader
             print("Do evaluation on test set")
 
-        # save_feature_forvis = []
-        # save_text_feature = []
-        # save_label = []
-        # save_logits = []
         for batch_idx, batch in enumerate(tqdm(data_loader)):
             input, label = self.parse_batch_test(batch)
             output_g, output, image_features_, text_features_ = self.model_inference(input)
             self.evaluator.process(output_g, label, output)
-
-        #     save_text_feature.append(text_features_.clone().detach().cpu().numpy())
-        #     save_feature_forvis.append(image_features_.clone().detach().cpu().numpy())
-        #     save_label.append(label.clone().detach().cpu().numpy())
-        #     save_logits.append(output.clone().detach().cpu().numpy())
-        # save_feature_forvis = np.concatenate(save_feature_forvis, axis=0)
-        # save_text_feature = np.stack(save_text_feature, axis=0)
-        # save_label = np.concatenate(save_label, axis=0)
-        # save_logits = np.concatenate(save_logits, axis=0)
-        # np.savez("test_features.npz", image_features=save_feature_forvis, text_features=save_text_feature, labels=save_label)
-        # np.savez("logits_labels.npz", logits=save_logits, labels=save_label)
 
         results = self.evaluator.evaluate()
 
@@ -424,7 +346,7 @@ class Caption_dual(TrainerX):
     def build_model(self):
         cfg = self.cfg
         classnames = self.dm.dataset.classnames
-        print('||||||||||||||||||||||||||||||||||||||  in Caption_dual')
+        print('|||||||||||||||||||||||||||||||||||||| Building Caption_dual')
 
         print(f"Loading CLIP (backbone: {cfg.MODEL.BACKBONE.NAME})")
         clip_model = load_clip_to_cpu(cfg)

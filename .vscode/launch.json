@@ -15,7 +15,7 @@
                 [
                     "--root", "/home/qiangwenjie/datasets",
                     "--trainer", "ZeroshotCLIP_dense", 
-                    "--dataset-config-file", "configs/datasets/voc2007_distill.yaml",
+                    "--dataset-config-file", "configs/datasets/voc2007_partial.yaml",
                     "--config-file", "configs/trainers/zsclip/rn50.yaml",
                     "--output-dir", "output/__debug__/ZeroshotCLIP",
                     "--eval-only"

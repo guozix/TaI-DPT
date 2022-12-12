@@ -1,8 +1,8 @@
 DATALOADER:
   TRAIN_X:
-    BATCH_SIZE: 192
+    BATCH_SIZE: 64
   TEST:
-    BATCH_SIZE: 192
+    BATCH_SIZE: 100
   NUM_WORKERS: 8
 
 INPUT:
@@ -12,7 +12,7 @@ INPUT:
   PIXEL_STD: [0.26862954, 0.26130258, 0.27577711]
   TRANSFORMS: ["random_resized_crop", "MLC_Policy", "random_flip", "normalize"]
   TRANSFORMS_TEST: ["resize", "normalize"]
-  random_resized_crop_scale: (0.6, 1.0)
+  random_resized_crop_scale: (0.5, 1.0)
 
 OPTIM:
   NAME: "sgd"
@@ -25,12 +25,12 @@ OPTIM:
 
 TRAIN:
   PRINT_FREQ: 5
-  LOSSFUNC: "dualcoop"  #  sigmoid  focal  asl
+  LOSSFUNC: "dualcoop"
 
 TEST:
   FINAL_MODEL: "best_val"
-  EVALUATOR :  "MLClassification"  # "Classification"
-  EVALUATOR_ACT : "dualcoop"  # softmax  sigmoid
+  EVALUATOR :  "MLClassification"
+  EVALUATOR_ACT : "only_local"
 
 MODEL:
   BACKBONE:

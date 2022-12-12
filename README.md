@@ -54,7 +54,7 @@ pip install -r requirements.txt
 We use captions from MS-COCO and localized narratives from OpenImages, and we evaluate our method on VOC2007, MS-COCO and NUS-WIDE.
 The directory structure is organized as follows.
 ```
-DATA
+DATAROOT
 ├── OpenImages
 │   ├── captions
 │   │   └── open_images_train_v6_captions.jsonl
@@ -91,7 +91,8 @@ DATA
 https://pan.baidu.com/s/1Bj-7fdrZAvUJPqAKrUkbbQ  (verification code: s6oj) -->
 
 ## Usage
-**Reproduce of Table 1.**
+**To reproduce Table 1.**
+Change the `DATA` variable in the scripts to the `DATAROOT` path above.
 
 Test Baseline ZSCLIP on the datasets:
 ``` bash
@@ -109,10 +110,12 @@ bash main.sh coco2014_distill rn50_coco2014 end 16 False coco2014_caption
 bash main.sh nuswide_distill_limit rn50_nuswide end 16 False nuswide_caption
 ```
 
-**Reproduce of DualCoOp**
+**To reproduce DualCoOp**
 ``` bash
 cd scripts/
-
+bash main_dual.sh voc2007_partial rn101 end 16 True voc2007_partial_dualcoop_448_CSC_p0_5 0.5 0
+bash main_dual.sh coco2014_partial rn101 end 16 True coco2014_partial_dualcoop_448_CSC_p0_5 0.5 1
+bash main_dual.sh nuswide_partial rn101_nus end 16 True nuswide_partial_dualcoop_448_CSC_p0_5 0.5 2
 ```
 
 
