@@ -113,12 +113,36 @@ bash main.sh nuswide_distill_limit rn50_nuswide end 16 False nuswide_caption
 **To reproduce DualCoOp**
 ``` bash
 cd scripts/
-bash main_dual.sh voc2007_partial rn101 end 16 True voc2007_partial_dualcoop_448_CSC_p0_5 0.5 0
-bash main_dual.sh coco2014_partial rn101 end 16 True coco2014_partial_dualcoop_448_CSC_p0_5 0.5 1
-bash main_dual.sh nuswide_partial rn101_nus end 16 True nuswide_partial_dualcoop_448_CSC_p0_5 0.5 2
+# VOC2007
+bash main_dual.sh voc2007_partial rn101 end 16 True voc2007_partial_dualcoop_448_CSC_p0_1 0.1 0
+bash main_dual.sh voc2007_partial rn101 end 16 True voc2007_partial_dualcoop_448_CSC_p0_2 0.2 0
+bash main_dual.sh voc2007_partial rn101 end 16 True voc2007_partial_dualcoop_448_CSC_p0_3 0.3 0
+...
+
+# COCO2014
+bash main_dual.sh coco2014_partial rn101 end 16 True coco2014_partial_dualcoop_448_CSC_p0_1 0.1 1
+...
+
+# NUS-WIDE
+bash main_dual.sh nuswide_partial rn101_nus end 16 True nuswide_partial_dualcoop_448_CSC_p0_1 0.1 2
+...
+
 ```
 
+**To reproduce ensemble results**
 
+The parameter setting here is a little cumbersome, but the logic is simple. You only need to specify two trained model paths and the corresponding model configurations.
+
+Here is an example of ensemble of TaI-DPT and DualCoOp on VOC2007. You should finish training TaI-DPT and DualCoOp (under a specific `partial_prob`) on VOC2007 before.
+
+``` bash
+cd scripts/
+
+bash ensemble.sh voc2007_distill rn50_voc2007 end 16 False voc2007_caption_e tmp1.pkl \
+ output/voc2007_caption/Caption_distill_double/rn50_voc2007/nctx16_cscFalse_ctpend/seed1 \
+voc2007_partial rn101 end 16 True voc2007_partial_dualcoop_448_CSC_p0_5_e tmp2.pkl \
+ output/voc2007_partial_dualcoop_448_CSC_p0_5/Caption_dual/rn101/nctx16_cscTrue_ctpend/seed1 0.9
+```
 ## Thanks
 
 We use code from [CoOp](https://github.com/KaiyangZhou/CoOp) and [Dassl](https://github.com/KaiyangZhou/Dassl.pytorch), which are great repositories and we encourage you to check them out and cite them in your work.
