@@ -30,7 +30,7 @@ Please follow the steps below to build your environment.
 # Create a conda environment (Omit if you already have a suitable environment)
 conda create -n dassl python=3.7
 conda activate dassl
-conda install pytorch==1.8.1 torchvision==0.9.1 cudatoolkit=10.1 -c pytorch  # torch (version >= 1.7.1)
+conda install pytorch==1.8.0 torchvision==0.9.0 torchaudio==0.8.0 cudatoolkit=11.1 -c pytorch -c conda-forge # torch (version >= 1.7.1)
 
 # Clone this repo
 git clone https://github.com/guozix/TaI-DPT.git
@@ -90,10 +90,29 @@ DATA
 <!-- We provide images of NUS-WIDE used in our experiments:
 https://pan.baidu.com/s/1Bj-7fdrZAvUJPqAKrUkbbQ  (verification code: s6oj) -->
 
-## Training
+## Usage
+**Reproduce of Table 1.**
 
+Test Baseline ZSCLIP on the datasets:
 ``` bash
-bash main.sh voc2007_distill rn50_fixscale end 16 16 False voc2007_caption 0 6
+cd scripts/
+bash zsclip.sh voc2007_distill rn50
+bash zsclip.sh coco2014_distill rn50
+bash zsclip.sh nuswide_distill_limit rn50
+```
+
+Train TaI-DPT on the datasets:
+``` bash
+cd scripts/
+bash main.sh voc2007_distill rn50_voc2007 end 16 False voc2007_caption
+bash main.sh coco2014_distill rn50_coco2014 end 16 False coco2014_caption
+bash main.sh nuswide_distill_limit rn50_nuswide end 16 False nuswide_caption
+```
+
+**Reproduce of DualCoOp**
+``` bash
+cd scripts/
+
 ```
 
 

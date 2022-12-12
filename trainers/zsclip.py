@@ -28,11 +28,7 @@ CUSTOM_TEMPLATES = {
     "ImageNetSketch": "a photo of a {}.",
     "ImageNetV2": "a photo of a {}.",
     "ImageNetA": "a photo of a {}.",
-    "ImageNetR": "a photo of a {}.",
-
-    # "VOC2012_trainset": "a photo of a {}.",
-    # "VOC2012_trainset_gt": "a photo of a {}.",
-    # "VOC2012_testset": "a photo of a {}.",
+    "ImageNetR": "a photo of a {}."
 }
 
 
@@ -64,21 +60,11 @@ class ZeroshotCLIP(TrainerX):
         self.text_features = text_features
         self.clip_model = clip_model
 
-        self.min_ = 100000
-        self.max_ = -100000
-
     def model_inference(self, image):
         image_features = self.clip_model.encode_image(image)
         image_features = image_features / image_features.norm(dim=-1, keepdim=True)
         logit_scale = self.clip_model.logit_scale.exp()
         logits = logit_scale * image_features @ self.text_features.t()
-        # logits = image_features @ self.text_features.t()
-
-        ## check score range
-        # print('logits scale: ', logit_scale)
-        # self.min_ = min(self.min_, logits.min().item())
-        # self.max_ = max(self.max_, logits.max().item())
-        # print(self.min_, self.max_)
 
         return logits, None, None
 
@@ -97,7 +83,7 @@ class ZeroshotCLIP_dense(TrainerX):
             temp = CUSTOM_TEMPLATES[cfg.DATASET.NAME]
         except:
             print('!! WARNING: Not found template for {}'.format(cfg.DATASET.NAME))
-            temp = "a photo without {}."  # temp = "a photo of a {}."  # 
+            temp = "a photo of a {}."
 
         prompts = [temp.format(c.replace("_", " ")) for c in classnames]
         print(f"Prompts: {prompts}")
@@ -117,9 +103,6 @@ class ZeroshotCLIP_dense(TrainerX):
         self.v_linear_bias = self.clip_model.visual.attnpool.v_proj.bias
         self.c_linear_weight = self.clip_model.visual.attnpool.c_proj.weight
         self.c_linear_bias = self.clip_model.visual.attnpool.c_proj.bias
-
-        self.min_ = 1
-        self.max_ = 0
 
     def encode_image(self, x):
         def stem(x):
@@ -152,26 +135,13 @@ class ZeroshotCLIP_dense(TrainerX):
         image_feature_ = image_feature_ / image_feature_.norm(dim=-1, keepdim=True)
 
         logit_scale = self.clip_model.logit_scale.exp() # logit_scale = self.clip_model.logit_scale.exp()
-        # logits_tmp = logit_scale * image_features @ self.text_features.t()   #  HW * B * C,  cls * C,  HW * B * cls
         logits_ = logit_scale * image_feature_ @ self.text_features.t()   # B * C,  cls * C, = B * cls
         logits = logit_scale * image_features @ self.text_features.t()    #  HW * B * C,  cls * C,  HW * B * cls
  
-        
-        # logits = torch.max(logits_tmp, dim=0)[0]
-        # logits_tmp_ = F.softmax(logits_tmp * 50, dim=0)
-        # logits = torch.sum((logits_tmp * logits_tmp_), dim=0)
-
-        # ## check score range
-        # self.min_ = min(self.min_, logits.min().item())
-        # self.max_ = max(self.max_, logits.max().item())
-        # print(self.min_, self.max_)
-        
         prob_spatial = torch.nn.functional.softmax(logits, dim=0)
         logits = torch.sum(logits * prob_spatial, dim=0)
-        # logits = logits.max(dim=0)[0]
 
-
-        return logits, logits_, None, None
+        return logits_, logits, None, None
 
     @torch.no_grad()
     def test(self, split=None):
@@ -189,27 +159,11 @@ class ZeroshotCLIP_dense(TrainerX):
             data_loader = self.test_loader
             print("Do evaluation on test set")
 
-        # save_feature_forvis = []
-        # save_text_feature = []
-        # save_label = []
-        # save_logits = []
         for batch_idx, batch in enumerate(tqdm(data_loader)):
             input, label = self.parse_batch_test(batch)
             # output = self.model_inference(input)
             output, output_pos, image_features_, text_features_ = self.model_inference(input)
             self.evaluator.process(output, label, output_pos)
-            
-
-        #     save_text_feature.append(text_features_.clone().detach().cpu().numpy())
-        #     save_feature_forvis.append(image_features_.clone().detach().cpu().numpy())
-        #     save_label.append(label.clone().detach().cpu().numpy())
-        #     save_logits.append(output.clone().detach().cpu().numpy())
-        # save_feature_forvis = np.concatenate(save_feature_forvis, axis=0)
-        # save_text_feature = np.stack(save_text_feature, axis=0)
-        # save_label = np.concatenate(save_label, axis=0)
-        # save_logits = np.concatenate(save_logits, axis=0)
-        # np.savez("test_features.npz", image_features=save_feature_forvis, text_features=save_text_feature, labels=save_label)
-        # np.savez("logits_labels.npz", logits=save_logits, labels=save_label)
 
         results = self.evaluator.evaluate()
 

@@ -1,6 +1,6 @@
 DATALOADER:
   TRAIN_X:
-    BATCH_SIZE: 512
+    BATCH_SIZE: 32
   TEST:
     BATCH_SIZE: 100
   NUM_WORKERS: 8
@@ -16,7 +16,7 @@ INPUT:
 
 OPTIM:
   NAME: "sgd"
-  LR: 0.001
+  LR: 0.0001
   MAX_EPOCH: 20 # 40
   LR_SCHEDULER: "cosine"
   WARMUP_EPOCH: 1
@@ -28,8 +28,11 @@ TRAIN:
   IF_LEARN_SCALE: False
   IF_LEARN_spatial_SCALE: False
   spatial_SCALE_text: 50
-  spatial_SCALE_image: 4
+  spatial_SCALE_image: 40
   LOSSFUNC: "double_ranking"
+
+  IF_ablation: False
+  Caption_num: 0
 
 TEST:
   FINAL_MODEL: "best_val"
@@ -39,3 +42,4 @@ TEST:
 MODEL:
   BACKBONE:
     NAME: "RN50"
+   

@@ -2,7 +2,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 import os
-# os.environ["CUDA_VISIBLE_DEVICES"]="1"
+os.environ["CUDA_VISIBLE_DEVICES"]="0"
 
 import argparse
 import torch
@@ -17,7 +17,6 @@ import datasets.nuswide_distill
 
 import trainers.zsclip
 import trainers.Caption_distill_double
-# import trainers/
 
 
 def print_args(args, cfg):
@@ -85,11 +84,9 @@ def extend_cfg(cfg):
     cfg.TRAINER.Caption.CTX_INIT = ""  # initialization words
     cfg.TRAINER.Caption.PREC = "fp32"  # fp16, fp32, amp
     cfg.TRAINER.Caption.CLASS_TOKEN_POSITION = "end"  # 'middle' or 'end' or 'front'
-
-    # cfg.TRAINER.COCOOP = CN()
-    # cfg.TRAINER.COCOOP.N_CTX = 16  # number of context vectors
-    # cfg.TRAINER.COCOOP.CTX_INIT = ""  # initialization words
-    # cfg.TRAINER.COCOOP.PREC = "fp16"  # fp16, fp32, amp
+    cfg.TRAINER.Caption.GL_merge_rate = 0.5
+    cfg.TRAINER.Caption.fewshot_TaI_merge_rate = 0.6
+    cfg.TRAINER.Caption.partial_TaI_merge_rate = 0.9
 
     cfg.DATASET.SUBSAMPLE_CLASSES = "all"  # all, base or new
     cfg.DATASET.SAMPLE = 0 # Sample some of all datas, 0 for no sampling i.e. using all

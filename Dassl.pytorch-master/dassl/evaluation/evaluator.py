@@ -184,6 +184,7 @@ class MLClassification(EvaluatorBase):
         self._y_pred = []
         self._y_pred_aux = []
         self.activate_func = cfg.TEST.EVALUATOR_ACT
+        self.cfg = cfg
 
     def reset(self):
         self._y_true = []
@@ -209,25 +210,16 @@ class MLClassification(EvaluatorBase):
         preds = torch.cat(self._y_pred, dim=0)
         if len(self._y_pred_aux) > 0:
             preds_aux = torch.cat(self._y_pred_aux, dim=0)
-        if self.activate_func == 'sigmoid':
-            preds_ = torch.sigmoid(preds)
-            mAP_score = mAP(targets, preds_)
-        elif self.activate_func == 'softmax':
-            preds_ = torch.nn.functional.softmax(preds, dim=1).cpu().numpy()
-            # pred = torch.nn.functional.softmax(mo * 50, dim=1)
-            mAP_score = mAP(targets, preds_)
-        elif self.activate_func == 'none':
-            mAP_score = mAP(targets, preds)
-
-        elif self.activate_func == 'default_merge_aux':
+        if self.activate_func == 'default_merge_aux':
             mAP_score = mAP(targets, preds.cpu().numpy())
-            print("mAP score none:", mAP_score)
+            print("mAP score default:", mAP_score)
             
             if len(self._y_pred_aux) > 0:
                 mAP_score_aux = mAP(targets, preds_aux.cpu().numpy())
                 print("mAP score aux:", mAP_score_aux)
                 
-                preds_merge = (preds.cpu().numpy() * 0.5 + preds_aux.cpu().numpy() * 0.5)
+                tmp = self.cfg.TRAINER.Caption.GL_merge_rate
+                preds_merge = preds.cpu().numpy() * tmp + preds_aux.cpu().numpy() * (1-tmp)
                 mAP_score_ = mAP(targets, preds_merge)
                 print("mAP score merged : preds + preds_aux:", mAP_score_)
                 mAP_score = mAP_score_
@@ -235,8 +227,7 @@ class MLClassification(EvaluatorBase):
             preds_ = torch.sigmoid(preds).cpu().numpy()
             mAP_score_sigmoid = mAP(targets, preds_)
             print("mAP score sigmoid:", mAP_score_sigmoid)
-        
-        # mAP_score = mAP(targets, preds)
+
         print("mAP score:", mAP_score)
 
         results = OrderedDict()

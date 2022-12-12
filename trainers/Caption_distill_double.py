@@ -120,7 +120,7 @@ class PromptLearner(nn.Module):
         self.ctx = nn.Parameter(ctx_vectors)  # to be optimized
         self.ctx_double = nn.Parameter(ctx_vectors_double)  # to be optimized
         
-        temperature = torch.tensor(3.0, dtype=dtype)  #  3.91 -> 50
+        temperature = torch.tensor(3.0, dtype=dtype)  #  exp(3.91) = 50
         self.temperature = nn.Parameter(temperature)
         spatial_T = torch.tensor(3.0, dtype=dtype)  # 20
         self.spatial_T = nn.Parameter(spatial_T)
@@ -250,70 +250,6 @@ class PromptLearner(nn.Module):
         return prompts, prompts_neg, self.temperature, self.spatial_T, self.ranking_scale
 
 
-class CustomCLIP(nn.Module):
-    def __init__(self, cfg, classnames, clip_model):
-        super().__init__()
-        self.prompt_learner = PromptLearner(cfg, classnames, clip_model)
-        self.tokenized_prompts = self.prompt_learner.tokenized_prompts
-        self.image_encoder = clip_model.visual
-        self.text_encoder = TextEncoder(clip_model)
-        # self.logit_scale = clip_model.logit_scale
-        self.logit_scale = 100
-        self.dtype = clip_model.dtype
-
-        self.min_ = 5
-        self.max_ = -5
-
-    def forward(self, image=None, captions=None, if_test=False):
-        if if_test:
-            image_features = self.image_encoder(image.type(self.dtype))
-
-            prompts, prompts_double, temperature, sigmoid_shift = self.prompt_learner()
-            tokenized_prompts = self.tokenized_prompts
-            text_features = self.text_encoder(prompts, tokenized_prompts)
-
-            image_features = image_features / image_features.norm(dim=-1, keepdim=True)
-            text_features = text_features / text_features.norm(dim=-1, keepdim=True)
-
-            logit_scale = 50 # temperature.exp() 
-            # logit_scale = self.logit_scale  #.exp()
-            logits = image_features @ text_features.t()
-            # logits -= sigmoid_shift
-
-            ## check score range
-            # self.min_ = min(self.min_, logits.min().item())
-            # self.max_ = max(self.max_, logits.max().item())
-            # print(self.min_, self.max_)
-
-            logits *= logit_scale
-
-            return logits, image_features, text_features
-        else:
-            image_features = self.text_encoder(captions, None, if_embedding=False)
-            # fake image feature, actually caption feature
-
-            prompts, temperature, sigmoid_shift = self.prompt_learner()
-            tokenized_prompts = self.tokenized_prompts
-            text_features = self.text_encoder(prompts, tokenized_prompts)
-
-            image_features = image_features / image_features.norm(dim=-1, keepdim=True)
-            text_features = text_features / text_features.norm(dim=-1, keepdim=True)
-
-            logit_scale = 2.0 # temperature.exp() 
-            # logit_scale = self.logit_scale  #.exp()
-            logits = image_features @ text_features.t()
-            # logits -= sigmoid_shift
-            logits *= logit_scale
-
-            # mean
-            # max_ = torch.max(logits, dim=1, keepdim=True)[0]
-            # min_ = torch.min(logits, dim=1, keepdim=True)[0]
-            # mean_ = (max_ + min_) / 2
-            # logits = logits - mean_
-
-            return logits, image_features, text_features
-
-
 class DenseCLIP(nn.Module):
     def __init__(self, cfg, classnames, clip_model, return_interm_layers=False):
         super().__init__()
@@ -367,7 +303,6 @@ class DenseCLIP(nn.Module):
             x = F.linear(x, self.c_linear_weight, self.c_linear_bias)
             image_features = x
 
-            # image_feature_ = self.model.visual(image.type(self.dtype))
             image_feature_, _ = self.model.visual.attnpool(image_feat, if_pos=False)
             # ===============================================================
 
@@ -390,9 +325,6 @@ class DenseCLIP(nn.Module):
             prob_spatial = torch.nn.functional.softmax(logits_neg * tmp_scale, dim=0)
             logits_local = torch.sum(logit_scale * logits_neg * prob_spatial, dim=0)
 
-            # logits = logits.max(dim=0)[0]
-            # logits = (logits - logits_neg)
-            # logits = ((logits - logits_neg) + (logits_ - logits_neg_))/2
             return logits_, logits_local, logits_neg, image_features @ text_features.t()  # compare additional branch with global proxy
         else:
             image_feat = self.text_encoder(captions, None, if_embedding=False, if_sequence=True) 
@@ -425,9 +357,6 @@ class DenseCLIP(nn.Module):
             prob_spatial = torch.nn.functional.softmax(logits_neg * tmp_scale, dim=0)
             logits_local = torch.sum(logit_scale * logits_neg * prob_spatial, dim=0)
             
-            # logits = logits.max(dim=0)[0]
-            # logits = (logits - logits_neg)
-            # logits = ((logits - logits_neg) + (logits_ - logits_neg_))/2
             return logits_, logits_local, image_features, text_features
 
 
@@ -462,41 +391,17 @@ class Caption_distill_double(TrainerX):
             data_loader = self.test_loader
             print("Do evaluation on test set")
 
-        # save_feature_forvis = []
-        # save_text_feature = []
-        # save_label = []
-        # save_logits = []
-        images = []
-        labels = []
-        outputs = []
-        output_poss = []
-        spatial_logits = []
-        global_spatial_logits = []
+        # images = []
+        # labels = []
+        # outputs = []
+        # output_poss = []
+        # spatial_logits = []
+        # global_spatial_logits = []
         for batch_idx, batch in enumerate(tqdm(data_loader)):
             input, label = self.parse_batch_test(batch)
             # output = self.model_inference(input)
             output, output_pos, image_features_, text_features_ = self.model_inference(input)
             self.evaluator.process(output, label, output_pos)
-            # images.append(input.clone().detach().cpu())
-            # labels.append(label.clone().detach().cpu().numpy())
-            # outputs.append(output.clone().detach().cpu().numpy())
-            # output_poss.append(output_pos.clone().detach().cpu().numpy())
-            # spatial_logits.append(image_features_.clone().detach().cpu().numpy())
-            # global_spatial_logits.append(text_features_.clone().detach().cpu().numpy())
-
-        # with open('vis_VOC2007_testset_input_result.pkl', 'wb') as f:
-        #     pickle.dump((images, labels, outputs, output_poss, spatial_logits, global_spatial_logits), f)
-            
-        #     save_text_feature.append(text_features_.clone().detach().cpu().numpy())
-        #     save_feature_forvis.append(image_features_.clone().detach().cpu().numpy())
-        #     save_label.append(label.clone().detach().cpu().numpy())
-        #     save_logits.append(output.clone().detach().cpu().numpy())
-        # save_feature_forvis = np.concatenate(save_feature_forvis, axis=0)
-        # save_text_feature = np.stack(save_text_feature, axis=0)
-        # save_label = np.concatenate(save_label, axis=0)
-        # save_logits = np.concatenate(save_logits, axis=0)
-        # np.savez("test_features.npz", image_features=save_feature_forvis, text_features=save_text_feature, labels=save_label)
-        # np.savez("logits_labels.npz", logits=save_logits, labels=save_label)
 
         results = self.evaluator.evaluate()
 
@@ -563,8 +468,6 @@ class Caption_distill_double(TrainerX):
             self.scaler.update()
         else:
             output, output_local, _, _ = self.model(None, image)
-            # loss = F.cross_entropy(output, label)
-            # loss = kl_loss(output, label)
             if   self.cfg.TRAIN.LOSSFUNC == 'sigmoid':
                 loss = norm_logits_BCEloss(output, label.float()) + norm_logits_BCEloss(output_local, label.float())
             elif self.cfg.TRAIN.LOSSFUNC == 'focal':
@@ -575,18 +478,13 @@ class Caption_distill_double(TrainerX):
                 loss = ranking_loss(output, label)
             elif self.cfg.TRAIN.LOSSFUNC == 'double_ranking':
                 loss = ranking_loss(output, label, scale_ = 1.0, margin_ = 1) + ranking_loss(output_local, label, scale_ = 1.0, margin_ = 1)
-            elif self.cfg.TRAIN.LOSSFUNC == 'normlabel_softmax':
-                label = label / label.sum(dim=-1, keepdim=True)
-                loss = soft_cross_entropy(output, label)
             else:
                 loss = soft_cross_entropy(output, label)
 
-            # loss = norm_logits_BCEloss(output, label)
             self.model_backward_and_update(loss)
 
         loss_summary = {
             "loss": loss.item(),
-            # "acc": compute_accuracy(output, label)[0].item(),
         }
 
         if (self.batch_idx + 1) == self.num_batches:

@@ -13,7 +13,6 @@ import jsonlines
 from tqdm import tqdm
 from clip import clip
 from clip.model import convert_weights
-from trainers.coop import load_clip_to_cpu
 
 from dassl.data.datasets import DATASET_REGISTRY, Datum, DatasetBase
 from dassl.utils import read_json, mkdir_if_missing
@@ -82,14 +81,15 @@ class nuswide_distill_limit(DatasetBase):
             tmp = []
             word_based_caption = {} # capid 2 cls labels
             capid_empty_filter = set()
-            with open(join(caption_feat_root, 'OpenImages/captions/open_images_train_v6_captions.jsonl'), 'r+', encoding='utf-8') as f:
-                for item in jsonlines.Reader(f):
+            with open(join(root, 'OpenImages/captions/open_images_train_v6_captions.jsonl'), 'r+', encoding='utf-8') as f:
+                print("Start parsing captions from openimages ...")
+                for item in tqdm(jsonlines.Reader(f)):
                     # tmp.append(clip.tokenize(item['caption'], truncate=True))
                     
                     cnt += 1
                     i = cnt
-                    if cnt % 1000 == 0:
-                        print(cnt)
+                    # if cnt % 1000 == 0:
+                    #     print(cnt)
 
                     cap = item['caption'].lower()
                     
@@ -136,7 +136,7 @@ class nuswide_distill_limit(DatasetBase):
                 prompts = pickle.load(f)
         else:
             tmp = []
-            with open(join(caption_feat_root, 'OpenImages/captions/open_images_train_v6_captions.jsonl'), 'r+', encoding='utf-8') as f:
+            with open(join(root, 'OpenImages/captions/open_images_train_v6_captions.jsonl'), 'r+', encoding='utf-8') as f:
                 for item in tqdm(jsonlines.Reader(f), desc='tokenizing openimage captions ...'):
                     tmp.append(clip.tokenize(item['caption'], truncate=True))
                     # cnt += 1

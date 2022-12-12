@@ -13,6 +13,8 @@ NCTX=$4  # number of context tokens
 CSC=$5  # class-specific context (False or True)
 run_ID=$6
 
+export CUDA_VISIBLE_DEVICES=1
+
 for SEED in 1 2 3
 do
     DIR=output/${run_ID}/${TRAINER}/${CFG}/nctx${NCTX}_csc${CSC}_ctp${CTP}/seed${SEED}
@@ -32,3 +34,7 @@ do
         TRAINER.Caption.CLASS_TOKEN_POSITION ${CTP}
     fi
 done
+
+# bash main.sh voc2007_distill rn50_voc2007 end 16 False voc2007_caption
+# bash main.sh coco2014_distill rn50_coco2014 end 16 False coco2014_caption
+# bash main.sh nuswide_distill_limit rn50_nuswide end 16 False nuswide_caption
