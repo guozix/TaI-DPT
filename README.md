@@ -91,8 +91,9 @@ DATAROOT
 https://pan.baidu.com/s/1Bj-7fdrZAvUJPqAKrUkbbQ  (verification code: s6oj) -->
 
 ## Usage
-**To reproduce Table 1.**
-Change the `DATA` variable in the scripts to the `DATAROOT` path above.
+**To evaluate the results in Table 1.**
+
+Change the `DATA` variable in the bash scripts to the `DATAROOT` path above.
 
 Test Baseline ZSCLIP on the datasets:
 ``` bash
@@ -101,6 +102,63 @@ bash zsclip.sh voc2007_distill rn50
 bash zsclip.sh coco2014_distill rn50
 bash zsclip.sh nuswide_distill_limit rn50
 ```
+
+The `mAP score default` term in the output denotes the mAP score calculated by using only the global classification logits, i.e. baseline CLIP.
+The `mAP score merged` term denotes the performance of equally merging the logits from the glocal and the local branch, i.e. CLIP-DPT, similarly hereinafter.
+
+Evaluate TaI-DPT:
+
+Unzip the trained model weights in output.zip.
+The file directory should be like:
+
+```
+output
+├── coco2014_caption
+│   └── Caption_distill_double
+│       └── rn50_coco2014
+│           └── nctx16_cscFalse_ctpend
+│               ├── seed1
+│                   ...
+│               ├── seed2
+│                   ...
+│               └── seed3
+│                   ...
+├── nuswide_caption
+│   └── Caption_distill_double
+│       └── rn50_nuswide
+│           └── nctx16_cscFalse_ctpend
+│               ├── seed1
+│                   ...
+│               ├── seed2
+│                   ...
+│               └── seed3
+│                   ...
+└── voc2007_caption
+    └── Caption_distill_double
+        └── rn50_voc2007
+            └── nctx16_cscFalse_ctpend
+                ├── seed1
+                    ...
+                ├── seed2
+                    ...
+                └── seed3
+                    ...
+```
+
+Then run the evaluation script:
+``` bash
+cd scripts/
+bash main_eval.sh voc2007_distill rn50_voc2007 end 16 False voc2007_caption
+bash main_eval.sh coco2014_distill rn50_coco2014 end 16 False coco2014_caption
+bash main_eval.sh nuswide_distill_limit rn50_nuswide end 16 False nuswide_caption
+```
+
+The `mAP score default` and  `mAP score merged` term in the output denotes mAP score of TaI and TaI-DPT. The results are also saved in log files in `./output/evaluation`. 
+
+
+**To reproduce the results in Table 1.**
+
+(If you extracted the trained model in the previous evaluation step, you need to set a different `run_ID`, otherwise the script will skip the training.)
 
 Train TaI-DPT on the datasets:
 ``` bash

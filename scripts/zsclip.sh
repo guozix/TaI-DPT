@@ -11,7 +11,7 @@ CFG=$2  # config file
 
 export CUDA_VISIBLE_DEVICES=0
 
-DIR=output/${TRAINER}/${DATASET}/${CFG}
+DIR=output/evaluation/${TRAINER}/${DATASET}/${CFG}
 if [ -d "$DIR" ]; then
     echo "Results are available in ${DIR}. Skip this job"
 else

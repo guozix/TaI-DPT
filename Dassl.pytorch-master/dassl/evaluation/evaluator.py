@@ -226,7 +226,7 @@ class MLClassification(EvaluatorBase):
                 mAP_score_ = mAP(targets, preds_merge)
                 print("mAP score merged : preds + preds_aux:", mAP_score_)
                 mAP_score = mAP_score_
-        if self.activate_func == 'only_local':
+        elif self.activate_func == 'only_local':
             mAP_score = mAP(targets, preds_aux.cpu().numpy())
             # print("mAP score:", mAP_score)
 
