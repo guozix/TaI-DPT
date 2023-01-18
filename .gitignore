@@ -2,6 +2,7 @@
 output/
 all_caption_tokenized_open_images.pkl
 all_caption_tokenized.pkl
+coco_caption_text_embed_sampled_idx.pkl
 coco2014_cls_capid_filterword_empty.pkl
 coco2014_cls_word_based_caption_labels.pkl
 nuswide_cls_capid_filterword_empty.pkl
