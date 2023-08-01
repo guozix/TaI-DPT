@@ -4,11 +4,11 @@
 
 ## Introduction
 
-This repo is the official implementation of **Texts as Images in Prompt Tuning for Multi-Label Recognition**.
+This repo officially implements **Texts as Images in Prompt Tuning for Multi-Label Recognition**.
 
-[[arxiv](https://arxiv.org/abs/2211.12739)]
+[[arxiv](https://arxiv.org/abs/2211.12739)] [[CVPR2023](https://openaccess.thecvf.com/content/CVPR2023/html/Guo_Texts_as_Images_in_Prompt_Tuning_for_Multi-Label_Image_Recognition_CVPR_2023_paper.html)]
 
-TaI-DPT explores the feasibility of prompting with text data for multi-label image recognition. Notable improvements are observed compared to zero-shot methods on multiple common multi-label benchmarks. For more details please see the [paper](https://arxiv.org/abs/2211.12739).
+TaI-DPT explores the feasibility of prompting with text data for multi-label image recognition. Notable improvements are observed compared to zero-shot methods on multiple common multi-label benchmarks. For more details, please see the [paper](https://arxiv.org/abs/2211.12739).
 
 Contact us with zixian_guo@foxmail.com
 
