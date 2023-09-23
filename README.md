@@ -53,6 +53,11 @@ pip install -r requirements.txt
 ## Datasets
 We use captions from MS-COCO and localized narratives from OpenImages, and we evaluate our method on VOC2007, MS-COCO and NUS-WIDE.
 The directory structure is organized as follows.
+
+The multi-label classification datasets can be accessed from their official websites [VOC2007](http://host.robots.ox.ac.uk/pascal/VOC/voc2007/), [MSCOCO2014](https://cocodataset.org/#download) and [NUS-WIDE](https://lms.comp.nus.edu.sg/wp-content/uploads/2019/research/nuswide/NUS-WIDE.html). The raw images of NUS-WIDE can be accessed from [here](https://pan.baidu.com/s/1Bj-7fdrZAvUJPqAKrUkbbQ) (verification code: s6oj).
+
+For the OpenImages dataset, we only use the localized narratives of its "V6" version. The ~130MB jsonl file can be downloaded from the official [site](https://storage.googleapis.com/localized-narratives/annotations/open_images_train_v6_captions.jsonl).
+
 ```
 DATAROOT
 ├── OpenImages
